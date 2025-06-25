@@ -126,10 +126,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "gurux-common", specifier = ">=1.0.13" },
-    { name = "gurux-dlms", specifier = ">=1.0.185" },
-    { name = "gurux-net", specifier = ">=1.0.23" },
-    { name = "gurux-serial", specifier = ">=1.0.21" },
-    { name = "lxml", specifier = ">=5.4.0" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "gurux-common", specifier = "==1.0.13" },
+    { name = "gurux-dlms", specifier = "==1.0.185" },
+    { name = "gurux-net", specifier = "==1.0.23" },
+    { name = "gurux-serial", specifier = "==1.0.21" },
+    { name = "lxml", specifier = ">=5.0.0,<6.0.0" },
+    { name = "pyyaml", specifier = "~=6.0.2" },
 ]

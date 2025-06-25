@@ -114,3 +114,6 @@ dmypy.json
 .pyre/
 .pytype/
 cython_debug/
+ext/
+config.py
+!bin/

@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "*** starting dbus-mqtt-devices ***"
+BASE=${BASE}
+exec 2>&1
+HOME=$BASE exec $BASE/dbus_dlms_meter.py

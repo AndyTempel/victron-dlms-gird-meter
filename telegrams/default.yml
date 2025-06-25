@@ -1,0 +1,16 @@
+version: "1.0"
+info:
+  id: "default"
+  name: "DEFAULT CONFIG"
+  distributer: "KSOFT"
+  country: "Slovenia"
+  supported_interfaces:
+    - "SERIAL"
+    - "TCP"
+    - "P1"
+  multiple_telegrams: false
+  required_keys: []
+
+transformations: []
+
+telegrams: []

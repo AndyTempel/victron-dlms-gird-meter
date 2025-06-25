@@ -1,0 +1,157 @@
+version: "1.0"
+info:
+  id: "si-sodo-elektromaribor"
+  name: "SODO / Elektro Maribor"
+  distributer: "Elektro Maribor"
+  country: "Slovenia"
+  supported_interfaces:
+    - "SERIAL"
+    - "TCP"
+    - "P1"
+  multiple_telegrams: true
+  required_keys:
+    - "SERIAL_NUMBER"
+    - "SERVER_ID"
+
+transformations:
+  - type: "MULTIPLY"
+    key: "VOLTAGE_L1"
+    value: 0.1
+  - type: "MULTIPLY"
+    key: "VOLTAGE_L2"
+    value: 0.1
+  - type: "MULTIPLY"
+    key: "VOLTAGE_L3"
+    value: 0.1
+  - type: "MULTIPLY"
+    key: "CURRENT_L1"
+    value: 0.01
+  - type: "MULTIPLY"
+    key: "CURRENT_L2"
+    value: 0.01
+  - type: "MULTIPLY"
+    key: "CURRENT_L3"
+    value: 0.01
+  - type: "MULTIPLY"
+    key: "REACTIVE_POWER_EXPORT"
+    value: 0.01
+  - type: "MULTIPLY"
+    key: "REACTIVE_POWER_IMPORT"
+    value: 0.01
+  - type: "MULTIPLY_IF_KEY"
+    key: "ACTIVE_POWER_EXPORT_L1"
+    operand: "GT"
+    value: 0
+    multiplier: -1
+    transform_key: "CURRENT_L1"
+  - type: "MULTIPLY_IF_KEY"
+    key: "ACTIVE_POWER_EXPORT_L2"
+    operand: "GT"
+    value: 0
+    multiplier: -1
+    transform_key: "CURRENT_L2"
+  - type: "MULTIPLY_IF_KEY"
+    key: "ACTIVE_POWER_EXPORT_L3"
+    operand: "GT"
+    value: 0
+    multiplier: -1
+    transform_key: "CURRENT_L3"
+
+telegrams:
+  - name: "LIVE_DATA"
+    length: 18
+    contents: 
+      - position: 0
+        name: "SERIAL_NUMBER"
+        type: "OctetString"
+      - position: 1
+        name: "SERVER_ID"
+        type: "OctetString"
+      - position: 2
+        name: "ACTIVE_POWER_IMPORT"
+        type: "UInt32"
+      - position: 3
+        name: "ACTIVE_POWER_EXPORT"
+        type: "UInt32"
+      - position: 4
+        name: "REACTIVE_POWER_EXPORT"
+        type: "UInt32"
+      - position: 5
+        name: "REACTIVE_POWER_IMPORT"
+        type: "UInt32"
+      - position: 6
+        name: "VOLTAGE_L1"
+        type: "UInt16"
+      - position: 7
+        name: "VOLTAGE_L2"
+        type: "UInt16"
+      - position: 8
+        name: "VOLTAGE_L3"
+        type: "UInt16"
+      - position: 9
+        name: "CURRENT_L1"
+        type: "UInt16"
+      - position: 10
+        name: "CURRENT_L2"
+        type: "UInt16"
+      - position: 11
+        name: "CURRENT_L3"
+        type: "UInt16"
+      - position: 12
+        name: "ACTIVE_POWER_IMPORT_L1"
+        type: "UInt32"
+      - position: 13
+        name: "ACTIVE_POWER_IMPORT_L2"
+        type: "UInt32"
+      - position: 14
+        name: "ACTIVE_POWER_IMPORT_L3"
+        type: "UInt32"
+      - position: 15
+        name: "ACTIVE_POWER_EXPORT_L1"
+        type: "UInt32"
+      - position: 16
+        name: "ACTIVE_POWER_EXPORT_L2"
+        type: "UInt32"
+      - position: 17
+        name: "ACTIVE_POWER_EXPORT_L3"
+        type: "UInt32"
+  - name: "USAGE_DATA"
+    length: 12
+    contents:
+      - position: 0
+        name: "SERIAL_NUMBER"
+        type: "OctetString"
+      - position: 1
+        name: "SERVER_ID"
+        type: "OctetString"
+      - position: 2
+        name: "POSS__METER_STATUS"
+        type: "Enum"
+      - position: 3
+        name: "SEND_BLOCK"
+        type: "OctetString"
+      - position: 4
+        name: "ACTIVE_ENERGY_IMPORT"
+        type: "UInt32"
+      - position: 5
+        name: "ACTIVE_ENERGY_IMPORT_T1"
+        type: "UInt32"
+      - position: 6
+        name: "ACTIVE_ENERGY_IMPORT_T2"
+        type: "UInt32"
+      - position: 7
+        name: "ACTIVE_ENERGY_EXPORT"
+        type: "UInt32"
+      - position: 8
+        name: "ACTIVE_ENERGY_EXPORT_T1"
+        type: "UInt32"
+      - position: 9
+        name: "ACTIVE_ENERGY_EXPORT_T2"
+        type: "UInt32"
+      - position: 10
+        name: "REACTIVE_ENERGY_IMPORT"
+        type: "UInt32"
+      - position: 11
+        name: "REACTIVE_ENERGY_EXPORT"
+        type: "UInt32"
+
