@@ -28,12 +28,12 @@ class TelegramProcessor:
 		self.available_telegrams = {}
 		telegram_files = [
 			f
-			for f in os.listdir("telegrams")
+			for f in os.listdir(os.path.join(os.path.dirname(__file__), "telegrams"))
 			if f.endswith(".yml") and f != "default.yml"
 		]
 
 		for file_name in telegram_files:
-			with open(os.path.join("telegrams", file_name), "r") as f:
+			with open(os.path.join(os.path.dirname(__file__), "telegrams", file_name), "r") as f:
 				content = yaml.safe_load(f)
 				if "info" in content and "id" in content["info"]:
 					self.available_telegrams[content["info"]["id"]] = content
