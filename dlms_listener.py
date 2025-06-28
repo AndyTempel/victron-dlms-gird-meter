@@ -1,7 +1,11 @@
 import logging
+
+logging.basicConfig(
+	level=logging.WARNING,  # Reduce from DEBUG/INFO to WARNING
+	format="%(asctime)s [%(levelname)s] %(message)s"
+)
 import traceback
 
-import pkg_resources
 from gurux_common.GXCommon import GXCommon
 from gurux_common.IGXMediaListener import IGXMediaListener
 from gurux_common.enums.TraceLevel import TraceLevel
@@ -16,47 +20,54 @@ from gurux_serial.GXSerial import GXSerial
 import config
 from telegram_processor import TelegramProcessor
 
-logging.basicConfig(level=logging.DEBUG)
+
+def debug_log(message, *args):
+	if logging.getLogger().isEnabledFor(logging.DEBUG):
+		if args:
+			logging.debug(message % args)
+		else:
+			logging.debug(message)
+
 
 # Pre-allocate dictionary with size hints
 topic_dictionary = dict.fromkeys([
-    "ACTIVE_POWER_TOTAL", "CURRENT_TOTAL", "ACTIVE_ENERGY_IMPORT",
-    "ACTIVE_ENERGY_EXPORT", "FREQUENCY", "SERIAL_NUMBER",
-    "ACTIVE_POWER_TOTAL_L1", "CURRENT_L1", "VOLTAGE_L1",
-    "ACTIVE_ENERGY_EXPORT_L1", "ACTIVE_ENERGY_IMPORT_L1",
-    "ACTIVE_POWER_TOTAL_L2", "CURRENT_L2", "VOLTAGE_L2",
-    "ACTIVE_ENERGY_EXPORT_L2", "ACTIVE_ENERGY_IMPORT_L2",
-    "ACTIVE_POWER_TOTAL_L3", "CURRENT_L3", "VOLTAGE_L3",
-    "ACTIVE_ENERGY_EXPORT_L3", "ACTIVE_ENERGY_IMPORT_L3"
+	"ACTIVE_POWER_TOTAL", "CURRENT_TOTAL", "ACTIVE_ENERGY_IMPORT",
+	"ACTIVE_ENERGY_EXPORT", "FREQUENCY", "SERIAL_NUMBER",
+	"ACTIVE_POWER_TOTAL_L1", "CURRENT_L1", "VOLTAGE_L1",
+	"ACTIVE_ENERGY_EXPORT_L1", "ACTIVE_ENERGY_IMPORT_L1",
+	"ACTIVE_POWER_TOTAL_L2", "CURRENT_L2", "VOLTAGE_L2",
+	"ACTIVE_ENERGY_EXPORT_L2", "ACTIVE_ENERGY_IMPORT_L2",
+	"ACTIVE_POWER_TOTAL_L3", "CURRENT_L3", "VOLTAGE_L3",
+	"ACTIVE_ENERGY_EXPORT_L3", "ACTIVE_ENERGY_IMPORT_L3"
 ])
 
 # Assign values using dict.update for efficiency
 topic_dictionary.update({
-    # Total
-    "ACTIVE_POWER_TOTAL": "/Ac/Power",
-    "CURRENT_TOTAL": "/Ac/Current",
-    "ACTIVE_ENERGY_IMPORT": "/Ac/Energy/Forward",
-    "ACTIVE_ENERGY_EXPORT": "/Ac/Energy/Reverse",
-    "FREQUENCY": "/Ac/Frequency",
-    "SERIAL_NUMBER": "/Serial",
-    # Phase 1
-    "ACTIVE_POWER_TOTAL_L1": "/Ac/L1/Power",
-    "CURRENT_L1": "/Ac/L1/Current",
-    "VOLTAGE_L1": "/Ac/L1/Voltage",
-    "ACTIVE_ENERGY_EXPORT_L1": "/Ac/L1/Energy/Reverse",
-    "ACTIVE_ENERGY_IMPORT_L1": "/Ac/L1/Energy/Forward",
-    # Phase 2
-    "ACTIVE_POWER_TOTAL_L2": "/Ac/L2/Power",
-    "CURRENT_L2": "/Ac/L2/Current",
-    "VOLTAGE_L2": "/Ac/L2/Voltage",
-    "ACTIVE_ENERGY_EXPORT_L2": "/Ac/L2/Energy/Reverse",
-    "ACTIVE_ENERGY_IMPORT_L2": "/Ac/L2/Energy/Forward",
-    # Phase 3
-    "ACTIVE_POWER_TOTAL_L3": "/Ac/L3/Power",
-    "CURRENT_L3": "/Ac/L3/Current",
-    "VOLTAGE_L3": "/Ac/L3/Voltage",
-    "ACTIVE_ENERGY_EXPORT_L3": "/Ac/L3/Energy/Reverse",
-    "ACTIVE_ENERGY_IMPORT_L3": "/Ac/L3/Energy/Forward",
+	# Total
+	"ACTIVE_POWER_TOTAL": "/Ac/Power",
+	"CURRENT_TOTAL": "/Ac/Current",
+	"ACTIVE_ENERGY_IMPORT": "/Ac/Energy/Forward",
+	"ACTIVE_ENERGY_EXPORT": "/Ac/Energy/Reverse",
+	"FREQUENCY": "/Ac/Frequency",
+	"SERIAL_NUMBER": "/Serial",
+	# Phase 1
+	"ACTIVE_POWER_TOTAL_L1": "/Ac/L1/Power",
+	"CURRENT_L1": "/Ac/L1/Current",
+	"VOLTAGE_L1": "/Ac/L1/Voltage",
+	"ACTIVE_ENERGY_EXPORT_L1": "/Ac/L1/Energy/Reverse",
+	"ACTIVE_ENERGY_IMPORT_L1": "/Ac/L1/Energy/Forward",
+	# Phase 2
+	"ACTIVE_POWER_TOTAL_L2": "/Ac/L2/Power",
+	"CURRENT_L2": "/Ac/L2/Current",
+	"VOLTAGE_L2": "/Ac/L2/Voltage",
+	"ACTIVE_ENERGY_EXPORT_L2": "/Ac/L2/Energy/Reverse",
+	"ACTIVE_ENERGY_IMPORT_L2": "/Ac/L2/Energy/Forward",
+	# Phase 3
+	"ACTIVE_POWER_TOTAL_L3": "/Ac/L3/Power",
+	"CURRENT_L3": "/Ac/L3/Current",
+	"VOLTAGE_L3": "/Ac/L3/Voltage",
+	"ACTIVE_ENERGY_EXPORT_L3": "/Ac/L3/Energy/Reverse",
+	"ACTIVE_ENERGY_IMPORT_L3": "/Ac/L3/Energy/Forward",
 })
 
 transform_multiply = {
@@ -127,16 +138,20 @@ class DLMSListener(IGXMediaListener):
 			logging.exception(ex)
 
 	def send_to_dbus(self, data):
-		payload = {}
+		# Pre-allocate a single dictionary with expected capacity
+		updates = {}
 		for key, value in data['data'].items():
 			if key in topic_dictionary:
 				raw_topic = topic_dictionary[key]
 				if raw_topic in transform_multiply:
 					value *= transform_multiply[raw_topic]
-				payload[raw_topic] = value
-		with self.dbusservice as s:
-			for path, value in payload.items():
-				s[path] = value
+				updates[raw_topic] = value
+
+		# Single D-Bus transaction with all updates
+		if updates:
+			with self.dbusservice as s:
+				for path, value in updates.items():
+					s[path] = value
 
 	def onStop(self, sender):
 		logging.info("Stopping DLMS listener.")
@@ -171,58 +186,31 @@ class DLMSListener(IGXMediaListener):
 			logging.debug(sb + str(value))
 
 	def onReceived(self, sender, e):
-		"""Media component sends received data through this method.
-
-		sender : The source of the event.
-		e : Event arguments.
-		"""
-		if sender.trace == TraceLevel.VERBOSE:
-			logging.debug("New data is received. " + GXCommon.toHex(e.data))
-		# Data might come in fragments.
+		# Add received data to buffer
 		self.reply.set(e.data)
 		data = GXReplyData()
+
 		try:
 			if not self.client.getData(self.reply, data, self.notify):
-				# If all data is received.
-				if self.notify.complete:
-					if not self.notify.isMoreData():
-						# Show received data as XML.
-						try:
-							xml = self.translator.dataToXml(self.notify.data)
-							if self.trace_level >= TraceLevel.INFO:
-								logging.info(xml)
-								# Print received data.
-								self.printData(self.notify.value, 0)
-							try:
-								self.onData(xml)
-							except Exception as ex:
-								logging.info(ex)
-								traceback.print_exc()
+				# Only process if complete and no more data expected
+				if self.notify.complete and not self.notify.isMoreData():
+					# Skip verbose logging in production
+					if self.trace_level >= TraceLevel.INFO and logging.getLogger().isEnabledFor(logging.DEBUG):
+						xml = self.translator.dataToXml(self.notify.data)
+						logging.debug(xml)
+					else:
+						xml = self.translator.dataToXml(self.notify.data)
 
-							# Example is sending list of push messages in first parameter.
-							if isinstance(self.notify.value, list):
-								objects = self.client.parsePushObjects(self.notify.value[0])
-								# Remove first item because it's not needed anymore.
-								objects.pop(0)
-								Valueindex = 1
-								for obj, index in objects:
-									self.client.updateValue(obj, index, self.notify.value[Valueindex])
-									Valueindex += 1
-									# Print value
-									logging.debug(
-										str(obj.objectType) + " " + obj.logicalName + " " + str(index) + ": " + str(
-											obj.getValues()[index - 1]))
-							logging.debug("Server address:" + str(self.notify.serverAddress) + " Client Address:" + str(
-								self.notify.clientAddress))
-						except Exception:
-							self.reply.position = 0
-							xml = self.translator.messageToXml(self.reply)
-							if self.trace_level >= TraceLevel.INFO:
-								logging.info(xml)
-						self.notify.clear()
-						self.reply.clear()
+					try:
+						self.onData(xml)
+					except Exception as ex:
+						logging.warning("Error processing data: %s", ex)
+
+					# Clear buffers for reuse
+					self.notify.clear()
+					self.reply.clear()
 		except Exception as ex:
-			logging.error(ex)
+			logging.error("Error in data reception: %s", ex)
 			self.notify.clear()
 			self.reply.clear()
 

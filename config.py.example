@@ -1,0 +1,13 @@
+from gurux_common.io import Parity, StopBits
+
+TTY_INTERFACE = 'ttyUSB0'  # Default TTY interface
+
+SERIAL_BAUD_RATE = 38400
+BYTE_SIZE = 8
+PARITY = Parity.NONE  # No parity
+STOP_BITS = StopBits.ONE  # One stop bit
+
+
+AUTHENTICATION_KEY = ''
+BLOCK_CIPHER_KEY = ''
+TELEGRAM_ID = 'si-sodo-reduxi'
