@@ -1,5 +1,5 @@
+import logging
 import traceback
-from pprint import pprint
 
 import pkg_resources
 from gurux_common.GXCommon import GXCommon
@@ -16,8 +16,22 @@ from gurux_serial.GXSerial import GXSerial
 import config
 from telegram_processor import TelegramProcessor
 
+logging.basicConfig(level=logging.DEBUG)
 
-topic_dictionary = {
+# Pre-allocate dictionary with size hints
+topic_dictionary = dict.fromkeys([
+    "ACTIVE_POWER_TOTAL", "CURRENT_TOTAL", "ACTIVE_ENERGY_IMPORT",
+    "ACTIVE_ENERGY_EXPORT", "FREQUENCY", "SERIAL_NUMBER",
+    "ACTIVE_POWER_TOTAL_L1", "CURRENT_L1", "VOLTAGE_L1",
+    "ACTIVE_ENERGY_EXPORT_L1", "ACTIVE_ENERGY_IMPORT_L1",
+    "ACTIVE_POWER_TOTAL_L2", "CURRENT_L2", "VOLTAGE_L2",
+    "ACTIVE_ENERGY_EXPORT_L2", "ACTIVE_ENERGY_IMPORT_L2",
+    "ACTIVE_POWER_TOTAL_L3", "CURRENT_L3", "VOLTAGE_L3",
+    "ACTIVE_ENERGY_EXPORT_L3", "ACTIVE_ENERGY_IMPORT_L3"
+])
+
+# Assign values using dict.update for efficiency
+topic_dictionary.update({
     # Total
     "ACTIVE_POWER_TOTAL": "/Ac/Power",
     "CURRENT_TOTAL": "/Ac/Current",
@@ -43,17 +57,17 @@ topic_dictionary = {
     "VOLTAGE_L3": "/Ac/L3/Voltage",
     "ACTIVE_ENERGY_EXPORT_L3": "/Ac/L3/Energy/Reverse",
     "ACTIVE_ENERGY_IMPORT_L3": "/Ac/L3/Energy/Forward",
-}
+})
 
 transform_multiply = {
-    "/Ac/Energy/Forward": 0.001,
-    "/Ac/Energy/Reverse": 0.001,
-    "/Ac/L1/Energy/Forward": 0.001,
-    "/Ac/L1/Energy/Reverse": 0.001,
-    "/Ac/L2/Energy/Forward": 0.001,
-    "/Ac/L2/Energy/Reverse": 0.001,
-    "/Ac/L3/Energy/Forward": 0.001,
-    "/Ac/L3/Energy/Reverse": 0.001,
+	"/Ac/Energy/Forward": 0.001,
+	"/Ac/Energy/Reverse": 0.001,
+	"/Ac/L1/Energy/Forward": 0.001,
+	"/Ac/L1/Energy/Reverse": 0.001,
+	"/Ac/L2/Energy/Forward": 0.001,
+	"/Ac/L2/Energy/Reverse": 0.001,
+	"/Ac/L3/Energy/Forward": 0.001,
+	"/Ac/L3/Energy/Reverse": 0.001,
 }
 
 
@@ -80,6 +94,7 @@ class DLMSListener(IGXMediaListener):
 		self.settings = GXSettings()
 		self.service_obj = service_obj
 		self.dbusservice = service_obj._dbusservice
+		self.trace_level = self.settings.trace
 
 		# There might be several notify messages in GBT.
 		self.notify = GXReplyData()
@@ -97,7 +112,7 @@ class DLMSListener(IGXMediaListener):
 		self.telegram_processor = TelegramProcessor.use_telegram(config.TELEGRAM_ID or 'si-sodo-reduxi')
 		self.reply = GXByteBuffer()
 		self.settings.media.trace = self.settings.trace
-		print(self.settings.media)
+		logging.info(str(self.settings.media))
 
 		# Start to listen events from the media.
 		self.settings.media.addListener(self)
@@ -105,15 +120,15 @@ class DLMSListener(IGXMediaListener):
 		if self.settings.client.interfaceType == InterfaceType.HDLC:
 			self.settings.media.eop = 0x7e
 		try:
-			print("Press any key to close the application.")
 			# Open the connection.
 			self.settings.media.open()
+			logging.info("Media opened successfully.")
 		except Exception as ex:
-			print(ex)
+			logging.exception(ex)
 
 	def send_to_dbus(self, data):
 		payload = {}
-		for key, value in data.items():
+		for key, value in data['data'].items():
 			if key in topic_dictionary:
 				raw_topic = topic_dictionary[key]
 				if raw_topic in transform_multiply:
@@ -124,6 +139,7 @@ class DLMSListener(IGXMediaListener):
 				s[path] = value
 
 	def onStop(self, sender):
+		logging.info("Stopping DLMS listener.")
 		self.service_obj._loop.quit()
 
 	def onError(self, sender, ex):
@@ -134,25 +150,25 @@ class DLMSListener(IGXMediaListener):
 		sender :  The source of the event.
 		ex : An Exception object that contains the event data.
 		"""
-		print("Error has occured. " + str(ex))
+		logging.error("Error has occured. " + str(ex))
 
 	@classmethod
 	def printData(cls, value, offset):
 		sb = ' ' * 2 * offset
 		if isinstance(value, list):
-			print(sb + "{")
+			logging.debug(sb + "{")
 			offset = offset + 1
 			# Print received data.
 			for it in value:
 				cls.printData(it, offset)
-			print(sb + "}")
+			logging.debug(sb + "}")
 			offset = offset - 1
 		elif isinstance(value, bytearray):
 			# Print value.
-			print(sb + GXCommon.toHex(value))
+			logging.debug(sb + GXCommon.toHex(value))
 		else:
 			# Print value.
-			print(sb + str(value))
+			logging.debug(sb + str(value))
 
 	def onReceived(self, sender, e):
 		"""Media component sends received data through this method.
@@ -161,7 +177,7 @@ class DLMSListener(IGXMediaListener):
 		e : Event arguments.
 		"""
 		if sender.trace == TraceLevel.VERBOSE:
-			print("New data is received. " + GXCommon.toHex(e.data))
+			logging.debug("New data is received. " + GXCommon.toHex(e.data))
 		# Data might come in fragments.
 		self.reply.set(e.data)
 		data = GXReplyData()
@@ -174,13 +190,13 @@ class DLMSListener(IGXMediaListener):
 						try:
 							xml = self.translator.dataToXml(self.notify.data)
 							if self.trace_level >= TraceLevel.INFO:
-								print(xml)
+								logging.info(xml)
 								# Print received data.
 								self.printData(self.notify.value, 0)
 							try:
 								self.onData(xml)
 							except Exception as ex:
-								print(ex)
+								logging.info(ex)
 								traceback.print_exc()
 
 							# Example is sending list of push messages in first parameter.
@@ -193,19 +209,20 @@ class DLMSListener(IGXMediaListener):
 									self.client.updateValue(obj, index, self.notify.value[Valueindex])
 									Valueindex += 1
 									# Print value
-									print(str(obj.objectType) + " " + obj.logicalName + " " + str(index) + ": " + str(
-										obj.getValues()[index - 1]))
-							print("Server address:" + str(self.notify.serverAddress) + " Client Address:" + str(
+									logging.debug(
+										str(obj.objectType) + " " + obj.logicalName + " " + str(index) + ": " + str(
+											obj.getValues()[index - 1]))
+							logging.debug("Server address:" + str(self.notify.serverAddress) + " Client Address:" + str(
 								self.notify.clientAddress))
 						except Exception:
 							self.reply.position = 0
 							xml = self.translator.messageToXml(self.reply)
 							if self.trace_level >= TraceLevel.INFO:
-								print(xml)
+								logging.info(xml)
 						self.notify.clear()
 						self.reply.clear()
 		except Exception as ex:
-			print(ex)
+			logging.error(ex)
 			self.notify.clear()
 			self.reply.clear()
 
@@ -219,13 +236,15 @@ class DLMSListener(IGXMediaListener):
 			try:
 				payload = self.telegram_processor.process_xml(xml)
 			except Exception as ex:
-				print(ex)
+				logging.info(ex)
 				return
-			if self.trace_level >= TraceLevel.INFO:
-				pprint(payload)
-			if len(self.mqtt.keys()) > 0:
-				for _, mqtt_cli in self.mqtt.items():
-					mqtt_cli.send_telegram(payload)
+			if self.trace_level > TraceLevel.INFO:
+				logging.info(payload)
+			try:
+				self.send_to_dbus(payload)
+			except Exception as ex:
+				logging.error("Error sending data to D-Bus: " + str(ex))
+				logging.error(traceback.format_exc())
 		except SystemExit:
 			pass
 
@@ -234,7 +253,7 @@ class DLMSListener(IGXMediaListener):
 		sender : The source of the event.
 		e : Event arguments.
 		"""
-		print("Media state changed. " + str(e))
+		logging.info("Media state changed. " + str(e))
 
 	def onTrace(self, sender, e):
 		"""Called when the Media is sending or receiving data.
@@ -242,7 +261,7 @@ class DLMSListener(IGXMediaListener):
 		sender : The source of the event.
 		e : Event arguments.
 		"""
-		print("trace:" + str(e))
+		logging.info("trace:" + str(e))
 
 	def onPropertyChanged(self, sender, e):
 		"""
@@ -251,4 +270,4 @@ class DLMSListener(IGXMediaListener):
 		sender : The source of the event.
 		e : Event arguments.
 		"""
-		print("Property {!r} has hanged.".format(str(e)))
+		logging.info("Property {!r} has hanged.".format(str(e)))
