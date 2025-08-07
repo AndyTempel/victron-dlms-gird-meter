@@ -99,6 +99,7 @@ def main():
 	_w = lambda p, v: (str(round(v, 1)) + 'W')  # noqa: E731
 	_v = lambda p, v: (str(round(v, 1)) + 'V')  # noqa: E731
 	_hz = lambda p, v: (str(round(v, 2)) + 'Hz')  # noqa: E731
+	_pf = lambda p, v: (str(round(v, 3)))  # noqa: E731
 
 	dlms = DbusDlmsMeterService(
 		servicename='com.victronenergy.grid.' + config.TTY_INTERFACE,
@@ -110,6 +111,7 @@ def main():
 			'/Ac/Power': {'initial': 0, 'textformat': _w},
 			'/Ac/Current': {'initial': 0, 'textformat': _a},
 			'/Ac/Frequency': {'initial': 0, 'textformat': _hz},
+			'/Ac/PowerFactor': {'initial': 1, 'textformat': _pf},  # power factor total
 
 			'/Ac/L1/Voltage': {'initial': 0, 'textformat': _v},
 			'/Ac/L2/Voltage': {'initial': 0, 'textformat': _v},
@@ -120,6 +122,9 @@ def main():
 			'/Ac/L1/Power': {'initial': 0, 'textformat': _w},
 			'/Ac/L2/Power': {'initial': 0, 'textformat': _w},
 			'/Ac/L3/Power': {'initial': 0, 'textformat': _w},
+			'/Ac/L1/PowerFactor': {'initial': 1, 'textformat': _pf},  # power factor phase 1
+			'/Ac/L2/PowerFactor': {'initial': 1, 'textformat': _pf},  # power factor phase 2
+			'/Ac/L3/PowerFactor': {'initial': 1, 'textformat': _pf},  # power factor phase 3
 		})
 
 	logging.info('Connected to dbus, and switching over to GLib.MainLoop() (= event based)')

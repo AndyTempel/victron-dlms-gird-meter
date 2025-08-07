@@ -44,15 +44,17 @@ class TelegramProcessor:
 	def use_telegram(cls, telegram_id):
 		self = cls()
 		if telegram_id not in self.available_telegrams:
-			avail_tel = "\n    ".join(self.available_telegrams.keys())
+			avail_tel = "\n	".join(self.available_telegrams.keys())
 			raise ValueError(
 				f"Telegram with id {telegram_id} not found!\n  "
-				f"Available telegrams:\n    {avail_tel}"
+				f"Available telegrams:\n	{avail_tel}"
 			)
 
 		# Store telegram config and pre-compute lookup tables
 		self.selected_telegram = self.available_telegrams[telegram_id]
-		self.config = self._default_config.copy()  # Use copy to avoid modifying original
+		self.config = (
+			self._default_config.copy()
+		)  # Use copy to avoid modifying original
 		self.config.update(self.selected_telegram)
 
 		# Pre-compute telegram lookup data
@@ -118,7 +120,10 @@ class TelegramProcessor:
 
 	def _get_structure(self, telegram_length, root):
 		# Fast path: unique length match
-		if telegram_length in self._is_telegram_length_unique and self._is_telegram_length_unique[telegram_length]:
+		if (
+			telegram_length in self._is_telegram_length_unique
+			and self._is_telegram_length_unique[telegram_length]
+		):
 			for definition in self.selected_telegram["telegrams"]:
 				if definition["length"] == telegram_length:
 					return definition
@@ -206,12 +211,14 @@ class TelegramProcessor:
 			multiplier = transform["multiplier"]
 
 			# Optimize comparison operations
-			if ((operand == "GT" and key_value > compare_value) or
-				(operand == "GTE" and key_value >= compare_value) or
-				(operand == "LT" and key_value < compare_value) or
-				(operand == "LTE" and key_value <= compare_value) or
-				(operand == "EQ" and key_value == compare_value) or
-				(operand == "NEQ" and key_value != compare_value)):
+			if (
+				(operand == "GT" and key_value > compare_value)
+				or (operand == "GTE" and key_value >= compare_value)
+				or (operand == "LT" and key_value < compare_value)
+				or (operand == "LTE" and key_value <= compare_value)
+				or (operand == "EQ" and key_value == compare_value)
+				or (operand == "NEQ" and key_value != compare_value)
+			):
 				output_val = val_to_transform * multiplier
 
 		return (output_key, output_val) if output_val is not None else None
@@ -231,7 +238,11 @@ class TelegramProcessor:
 			import_l1 = payload.get("ACTIVE_POWER_IMPORT_L1")
 			import_l2 = payload.get("ACTIVE_POWER_IMPORT_L2")
 			import_l3 = payload.get("ACTIVE_POWER_IMPORT_L3")
-			if import_l1 is not None and import_l2 is not None and import_l3 is not None:
+			if (
+				import_l1 is not None
+				and import_l2 is not None
+				and import_l3 is not None
+			):
 				payload["ACTIVE_POWER_IMPORT"] = import_l1 + import_l2 + import_l3
 
 		# Calculate total export if needed
@@ -239,7 +250,11 @@ class TelegramProcessor:
 			export_l1 = payload.get("ACTIVE_POWER_EXPORT_L1")
 			export_l2 = payload.get("ACTIVE_POWER_EXPORT_L2")
 			export_l3 = payload.get("ACTIVE_POWER_EXPORT_L3")
-			if export_l1 is not None and export_l2 is not None and export_l3 is not None:
+			if (
+				export_l1 is not None
+				and export_l2 is not None
+				and export_l3 is not None
+			):
 				payload["ACTIVE_POWER_EXPORT"] = export_l1 + export_l2 + export_l3
 
 		# Calculate total power if needed
@@ -254,5 +269,56 @@ class TelegramProcessor:
 			current_l1 = payload.get("CURRENT_L1")
 			current_l2 = payload.get("CURRENT_L2")
 			current_l3 = payload.get("CURRENT_L3")
-			if current_l1 is not None and current_l2 is not None and current_l3 is not None:
+			if (
+				current_l1 is not None
+				and current_l2 is not None
+				and current_l3 is not None
+			):
 				payload["CURRENT_TOTAL"] = current_l1 + current_l2 + current_l3
+
+		# Calculate power factor for each phase and total
+		valid_phases = []
+		for phase in ("L1", "L2", "L3"):
+			voltage = payload.get(f"VOLTAGE_{phase}")
+			current = payload.get(f"CURRENT_{phase}")
+			real_power = payload.get(f"ACTIVE_POWER_TOTAL_{phase}")
+
+			if voltage is not None and current is not None and real_power is not None:
+				valid_phases.append((phase, voltage, current, real_power))
+
+		if len(valid_phases) not in (1, 3):
+			logging.warning(
+				"Unsupported number of valid power phases. Expected 1 or 3."
+			)
+			return  # Skip PF calculation entirely
+
+		pf_total_numerator = 0.0
+		pf_total_denominator = 0.0
+
+		for phase, voltage, current, real_power in valid_phases:
+			try:
+				apparent_power = abs(voltage * current)
+				if apparent_power < 1e-2:
+					continue  # Skip unreliable values
+
+				pf = real_power / apparent_power
+				pf_clamped = max(min(pf, 1.0), -1.0)
+
+				payload[f"POWER_FACTOR_{phase}"] = round(pf_clamped, 3)
+				payload[f"POWER_FACTOR_{phase}_DIRECTION"] = (
+					"lagging" if pf_clamped >= 0 else "leading"
+				)
+
+				pf_total_numerator += real_power
+				pf_total_denominator += apparent_power
+
+			except Exception as e:
+				logging.warning(f"Skipping PF calc for {phase}: {e}")
+
+		if pf_total_denominator >= 1e-2:
+			total_pf = pf_total_numerator / pf_total_denominator
+			total_pf_clamped = max(min(total_pf, 1.0), -1.0)
+			payload["POWER_FACTOR_TOTAL"] = round(total_pf_clamped, 3)
+			payload["POWER_FACTOR_TOTAL_DIRECTION"] = (
+				"lagging" if total_pf_clamped >= 0 else "leading"
+			)
