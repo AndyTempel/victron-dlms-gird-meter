@@ -32,7 +32,7 @@ except ImportError as exc:
     raise FileNotFoundError("config.py not found") from exc
 
 
-class DbusDlmsMeterService(object):
+class DbusDlmsMeterService:
     def __init__(
         self,
         servicename,

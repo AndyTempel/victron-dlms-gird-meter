@@ -146,8 +146,9 @@ class GXSerialCustom(GXSerial):
     ):
         super().__init__(port, baudRate, dataBits, stopBits, parity)
         self.__blocked_count = 0
+        self.__bytesSent = 0
 
-    def __readThread(self):
+    def __readThread(self):  # noqa: W0238
         # pylint: disable=broad-except, bare-except
         while not self.__closing.isSet():
             try:
@@ -179,7 +180,7 @@ class GXSerialCustom(GXSerial):
                     script = os.path.join(os.getcwd(), "bin", "restart.sh")
                     if os.path.exists(script):
                         # Fire the script (don't wait for it to finish) to restart this driver.
-                        subprocess.Popen(
+                        subprocess.Popen(  # noqa: R1732
                             ["/bin/bash", str(script)],
                             start_new_session=True,
                             cwd=os.path.dirname(os.getcwd()),
@@ -189,7 +190,7 @@ class GXSerialCustom(GXSerial):
                 if not self.isOpen():
                     self.__closing.set()
                     self.__notifyMediaStateChange(MediaState.CLOSED)
-                    self.__bytesSent = 0
+                    self.__bytesSent = 0  # noqa: W0238
                     self.__syncBase.exception = ex
                     self.__syncBase.resetReceivedSize()
                     self.__syncBase.setReceived()
