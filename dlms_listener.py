@@ -1,5 +1,5 @@
 import logging
-import os.path
+import os
 import subprocess
 import time
 import traceback
@@ -8,7 +8,7 @@ from gurux_common.GXCommon import GXCommon
 from gurux_common.IGXMediaListener import IGXMediaListener
 from gurux_common.enums import MediaState
 from gurux_common.enums.TraceLevel import TraceLevel
-from gurux_common.io import BaudRate, Parity, StopBits
+from gurux_common.io import Parity, StopBits, BaudRate
 from gurux_dlms.GXByteBuffer import GXByteBuffer
 from gurux_dlms.GXDLMSTranslator import GXDLMSTranslator
 from gurux_dlms.GXReplyData import GXReplyData

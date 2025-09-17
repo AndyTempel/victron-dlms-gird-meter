@@ -14,11 +14,38 @@ disable=
     C0115,
     C0116,
     R0903,
-    E0401
+    E0401,
+    # Import/order/location & out-of-top-level imports common in this project
+    C0411,
+    C0413,
+    C0415,
+    # Naming style (callbacks, vendor APIs)
+    C0103,
+    # Line length (use Black instead)
+    C0301,
+    # Logging formatting style noise (prefer consistency over strictness)
+    W1201,
+    W1202,
+    W1203,
+    C0209,
+    # Accessing protected members occasionally needed
+    W0212,
+    # Broad exceptions used at integration boundaries
+    W0718,
+    # Function/class complexity constraints
+    R0913,
+    R0902,
+    R0914,
+    R0912,
+    R0915,
+    R0916,
+    # Lambda assignment preference (we tolerate)
+    C3001,
+    # Unused arguments (callbacks/interfaces)
+    W0613
 
 [FORMAT]
 max-line-length=100
 
 [REPORTS]
 score=no
-

@@ -19,7 +19,7 @@ class TelegramProcessor:
     def __init__(self) -> None:
         # Load configs once during initialization
         config_path = os.path.join(os.path.dirname(__file__), "telegrams/default.yml")
-        with open(config_path, "r") as f:
+        with open(config_path, "r", encoding="utf-8") as f:
             self._default_config = yaml.safe_load(f)
 
         self.available_telegrams = {}
@@ -32,7 +32,7 @@ class TelegramProcessor:
         telegram_dir = os.path.join(os.path.dirname(__file__), "telegrams")
         for filename in os.listdir(telegram_dir):
             if filename.endswith(".yml") and filename != "default.yml":
-                with open(os.path.join(telegram_dir, filename), "r") as f:
+                with open(os.path.join(telegram_dir, filename), "r", encoding="utf-8") as f:
                     content = yaml.safe_load(f)
                     if "info" in content and "id" in content["info"]:
                         self.available_telegrams[content["info"]["id"]] = content

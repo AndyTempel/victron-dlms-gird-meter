@@ -27,9 +27,9 @@ from vedbus import VeDbusService
 
 try:
     import config
-except ImportError:
+except ImportError as exc:
     logging.critical("config.py not found, create it in the same directory as this script.")
-    raise FileNotFoundError("config.py not found")
+    raise FileNotFoundError("config.py not found") from exc
 
 
 class DbusDlmsMeterService(object):
@@ -66,10 +66,7 @@ class DbusDlmsMeterService(object):
 
         for path, settings in self._paths.items():
             self._dbusservice.add_path(
-                path,
-                settings["initial"],
-                writeable=True,
-                onchangecallback=self._handlechangedvalue,
+                path, settings["initial"], writeable=True, onchangecallback=self._handlechangedvalue
             )
 
         self._dbusservice.register()
@@ -119,14 +116,8 @@ def main():
         servicename="com.victronenergy.grid." + config.TTY_INTERFACE,
         deviceinstance=0,
         paths={
-            "/Ac/Energy/Forward": {
-                "initial": 0,
-                "textformat": _kwh,
-            },  # energy bought from the grid
-            "/Ac/Energy/Reverse": {
-                "initial": 0,
-                "textformat": _kwh,
-            },  # energy sold to the grid
+            "/Ac/Energy/Forward": {"initial": 0, "textformat": _kwh},  # energy bought from the grid
+            "/Ac/Energy/Reverse": {"initial": 0, "textformat": _kwh},  # energy sold to the grid
             "/Ac/Power": {"initial": 0, "textformat": _w},
             "/Ac/Current": {"initial": 0, "textformat": _a},
             "/Ac/Frequency": {"initial": 0, "textformat": _hz},
@@ -140,18 +131,16 @@ def main():
             "/Ac/L1/Power": {"initial": 0, "textformat": _w},
             "/Ac/L2/Power": {"initial": 0, "textformat": _w},
             "/Ac/L3/Power": {"initial": 0, "textformat": _w},
-            "/Ac/L1/PowerFactor": {
-                "initial": 1,
-                "textformat": _pf,
-            },  # power factor phase 1
-            "/Ac/L2/PowerFactor": {
-                "initial": 1,
-                "textformat": _pf,
-            },  # power factor phase 2
-            "/Ac/L3/PowerFactor": {
-                "initial": 1,
-                "textformat": _pf,
-            },  # power factor phase 3
+            "/Ac/L1/PowerFactor": {"initial": 1, "textformat": _pf},  # power factor phase 1
+            "/Ac/L2/PowerFactor": {"initial": 1, "textformat": _pf},  # power factor phase 2
+            "/Ac/L3/PowerFactor": {"initial": 1, "textformat": _pf},  # power factor phase 3
+            # Add per-phase energy counters to match dlms_listener updates
+            "/Ac/L1/Energy/Forward": {"initial": 0, "textformat": _kwh},
+            "/Ac/L1/Energy/Reverse": {"initial": 0, "textformat": _kwh},
+            "/Ac/L2/Energy/Forward": {"initial": 0, "textformat": _kwh},
+            "/Ac/L2/Energy/Reverse": {"initial": 0, "textformat": _kwh},
+            "/Ac/L3/Energy/Forward": {"initial": 0, "textformat": _kwh},
+            "/Ac/L3/Energy/Reverse": {"initial": 0, "textformat": _kwh},
         },
     )
 
