@@ -11,3 +11,22 @@ dependencies = [
     "lxml==5.0.2",
     "pyyaml~=6.0.2",
 ]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "pylint>=3.2.0",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+extend-exclude = """
+(
+  ^ext/
+| ^.venv/
+| ^venv/
+| ^build/
+| ^dist/
+)
+"""

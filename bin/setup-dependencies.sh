@@ -100,9 +100,22 @@ fi
 
 echo "$PREFIX Pip install module dependencies"
 check_online
-ensure_opkg_installed libxslt-dev
 python -m pip install dataclasses # need to force dataclasses to be installed before installing rest of requirements
-python -m pip install --upgrade lxml --index-url https://piwheels.org/simple
+
+# Optimized path for libxslt-dev and lxml to avoid slow opkg/lxml steps on repeat runs.
+if opkg list-installed | grep -q "^libxslt-dev"; then
+    echo "$PREFIX libxslt-dev already installed"
+    if python -c "import lxml" >/dev/null 2>&1; then
+        echo "$PREFIX lxml already installed; skipping lxml upgrade"
+    else
+        echo "$PREFIX lxml not installed; installing lxml wheel"
+        python -m pip install --upgrade lxml --index-url https://piwheels.org/simple
+    fi
+else
+    ensure_opkg_installed libxslt-dev
+    python -m pip install --upgrade lxml --index-url https://piwheels.org/simple
+fi
+
 python -m pip install -r $BASE/requirements.txt
 
 CUSTOM_UDEV_RULE_FILE="/etc/udev/rules.d/10-serial-starter-ignore.rules"

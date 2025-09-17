@@ -39,7 +39,7 @@ Edit the configuration file to match your setup (serial port, authentication key
 4. Install service
 
 ```bash
-./install.sh
+./bin/setup.sh
 ```
 
 5. Reboot the device
@@ -66,6 +66,21 @@ BLOCK_CIPHER_KEY = ''       # Optional: Set your encryption key
 TELEGRAM_ID = 'si-sodo-reduxi'  # File for telegram definitions
 ```
 
+## USB serial adapter identification (recommended)
+
+To make sure serial-starter ignores your RS485 adapter reliably, set the FTDI Product Description of your USB–RS485 adapter to a known value, and match that in the setup script.
+
+- Recommended value: KSOFTESS (this repository expects this by default).
+- How to set it: On Windows, use FT_Prog to program the adapter and set the Product Description field to KSOFTESS. Apply the changes and replug the adapter.
+- Script reference: bin/setup-dependencies.sh uses SERIAL_ID_MODEL to generate a udev rule and to detect the correct tty device. Default is:
+  - SERIAL_ID_MODEL="KSOFTESS"
+- If you choose a different description, update both places in the script accordingly:
+  - The SERIAL_ID_MODEL variable near the top
+  - The CUSTOM_UDEV_RULE that includes ENV{ID_MODEL}=="..."
+- Verify on device:
+  - Run: `udevadm info --query=property --name=/dev/ttyUSB0 | grep ^ID_MODEL=` and check it matches your chosen value.
+  - Re-run `./bin/setup.sh` after changing the description or script to refresh the udev rule and serial handling.
+
 ## How it Works
 
 The service performs the following functions:
@@ -85,7 +100,7 @@ The service performs the following functions:
 This service has been tested with the following DLMS-compatible meters:
 - Iskraemeco AM550
 
-Most DLMS meters need to have a converter to RS485, such as the [Reduxi Convrter for AM550](https://support.reduxi.eu/hc/en-us/articles/13592127131409-Reduxi-Converter-for-Iskraemeco-AM550-meter).
+Most DLMS meters need to have a converter to RS485, such as the [Reduxi Converter for AM550](https://support.reduxi.eu/hc/en-us/articles/13592127131409-Reduxi-Converter-for-Iskraemeco-AM550-meter).
 
 ## Troubleshooting
 
@@ -101,9 +116,9 @@ svstat /service/dbus-dlms-meter
 1. Verify the correct TTY interface in your config.py
 2. Check cable connections to your RS485 converter
 3. Ensure the baud rate matches your meter's configuration
-4. Make sure to change _Product description_ of your USB RS485 to something else using FT_Prog. For example, "MYGRIDMETER".
+4. Set the FTDI Product Description of your USB RS485 adapter using FT_Prog to "KSOFTESS" (default expected here). If you pick a different value, update SERIAL_ID_MODEL and the CUSTOM_UDEV_RULE in bin/setup-dependencies.sh accordingly.
 5. If the issue persists, add a rule to a serial-starter rules file `/etc/udev/rules.d/serial-starter.rules`
-   Example rule: ```ACTION=="add", ENV{ID_BUS}=="usb", ENV{ID_MODEL}=="MYGRIDMETER",                   ENV{VE_SERVICE}="ignore"```
+   Example rule: ```ACTION=="add", ENV{ID_BUS}=="usb", ENV{ID_MODEL}=="KSOFTESS",                   ENV{VE_SERVICE}="ignore"```
 
 
 

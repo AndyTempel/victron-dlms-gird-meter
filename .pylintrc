@@ -1,0 +1,24 @@
+[MASTER]
+ignore=ext
+ignore-patterns=ext,venv,.venv,.git
+jobs=0
+
+[TYPECHECK]
+ignored-modules=gi,gi.repository,dbus
+# Prevent noise about gi submodules
+generated-members=gi.repository.*
+
+[MESSAGES CONTROL]
+disable=
+    C0114,
+    C0115,
+    C0116,
+    R0903,
+    E0401
+
+[FORMAT]
+max-line-length=100
+
+[REPORTS]
+score=no
+

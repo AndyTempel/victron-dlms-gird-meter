@@ -4,16 +4,16 @@ import subprocess
 import time
 import traceback
 
-from gurux_common.enums import MediaState
-from gurux_common.enums.TraceLevel import TraceLevel
 from gurux_common.GXCommon import GXCommon
 from gurux_common.IGXMediaListener import IGXMediaListener
+from gurux_common.enums import MediaState
+from gurux_common.enums.TraceLevel import TraceLevel
 from gurux_common.io import BaudRate, Parity, StopBits
-from gurux_dlms.enums import TranslatorOutputType  # noqa: E402
-from gurux_dlms.enums.InterfaceType import InterfaceType
 from gurux_dlms.GXByteBuffer import GXByteBuffer
 from gurux_dlms.GXDLMSTranslator import GXDLMSTranslator
 from gurux_dlms.GXReplyData import GXReplyData
+from gurux_dlms.enums import TranslatorOutputType  # noqa: E402
+from gurux_dlms.enums.InterfaceType import InterfaceType
 from gurux_dlms.secure import GXDLMSSecureClient
 from gurux_serial.GXSerial import GXSerial
 
