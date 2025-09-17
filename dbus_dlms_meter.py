@@ -28,9 +28,7 @@ from vedbus import VeDbusService
 try:
     import config
 except ImportError:
-    logging.critical(
-        "config.py not found, create it in the same directory as this script."
-    )
+    logging.critical("config.py not found, create it in the same directory as this script.")
     raise FileNotFoundError("config.py not found")
 
 
@@ -77,9 +75,7 @@ class DbusDlmsMeterService(object):
         self._dbusservice.register()
 
         # Gurux DLMS Meter Service
-        logging.info(
-            "DbusDlmsMeterService initialized with service name: %s" % servicename
-        )
+        logging.info("DbusDlmsMeterService initialized with service name: %s" % servicename)
         self._listener = DLMSListener(self)
 
     def _update(self):
@@ -159,9 +155,7 @@ def main():
         },
     )
 
-    logging.info(
-        "Connected to dbus, and switching over to GLib.MainLoop() (= event based)"
-    )
+    logging.info("Connected to dbus, and switching over to GLib.MainLoop() (= event based)")
     mainloop = GLib.MainLoop()
     dlms._loop = mainloop  # pass the mainloop to the listener
     logging.info("starting GLib.MainLoop")

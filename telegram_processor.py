@@ -12,9 +12,7 @@ except ImportError:
 
     USES_LXML = False
 
-logging.basicConfig(
-    level=logging.WARNING, format="%(asctime)s [%(levelname)s] %(message)s"
-)
+logging.basicConfig(level=logging.WARNING, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
 class TelegramProcessor:
@@ -51,9 +49,7 @@ class TelegramProcessor:
 
         # Store telegram config and pre-compute lookup tables
         self.selected_telegram = self.available_telegrams[telegram_id]
-        self.config = (
-            self._default_config.copy()
-        )  # Use copy to avoid modifying original
+        self.config = self._default_config.copy()  # Use copy to avoid modifying original
         self.config.update(self.selected_telegram)
 
         # Pre-compute telegram lookup data
@@ -72,9 +68,7 @@ class TelegramProcessor:
     def process_xml(self, xml):
         # Parse XML - this is an expensive operation we can't avoid
         if USES_LXML:
-            root = etree.fromstring(
-                xml, parser=etree.XMLParser(recover=True, remove_comments=True)
-            )
+            root = etree.fromstring(xml, parser=etree.XMLParser(recover=True, remove_comments=True))
         else:
             root = etree.fromstring(xml, parser=etree.XMLParser())
 
@@ -237,11 +231,7 @@ class TelegramProcessor:
             import_l1 = payload.get("ACTIVE_POWER_IMPORT_L1")
             import_l2 = payload.get("ACTIVE_POWER_IMPORT_L2")
             import_l3 = payload.get("ACTIVE_POWER_IMPORT_L3")
-            if (
-                import_l1 is not None
-                and import_l2 is not None
-                and import_l3 is not None
-            ):
+            if import_l1 is not None and import_l2 is not None and import_l3 is not None:
                 payload["ACTIVE_POWER_IMPORT"] = import_l1 + import_l2 + import_l3
 
         # Calculate total export if needed
@@ -249,11 +239,7 @@ class TelegramProcessor:
             export_l1 = payload.get("ACTIVE_POWER_EXPORT_L1")
             export_l2 = payload.get("ACTIVE_POWER_EXPORT_L2")
             export_l3 = payload.get("ACTIVE_POWER_EXPORT_L3")
-            if (
-                export_l1 is not None
-                and export_l2 is not None
-                and export_l3 is not None
-            ):
+            if export_l1 is not None and export_l2 is not None and export_l3 is not None:
                 payload["ACTIVE_POWER_EXPORT"] = export_l1 + export_l2 + export_l3
 
         # Calculate total power if needed
@@ -268,11 +254,7 @@ class TelegramProcessor:
             current_l1 = payload.get("CURRENT_L1")
             current_l2 = payload.get("CURRENT_L2")
             current_l3 = payload.get("CURRENT_L3")
-            if (
-                current_l1 is not None
-                and current_l2 is not None
-                and current_l3 is not None
-            ):
+            if current_l1 is not None and current_l2 is not None and current_l3 is not None:
                 payload["CURRENT_TOTAL"] = current_l1 + current_l2 + current_l3
 
         # Calculate power factor for each phase and total
@@ -286,9 +268,7 @@ class TelegramProcessor:
                 valid_phases.append((phase, voltage, current, real_power))
 
         if len(valid_phases) not in (1, 3):
-            logging.warning(
-                "Unsupported number of valid power phases. Expected 1 or 3."
-            )
+            logging.warning("Unsupported number of valid power phases. Expected 1 or 3.")
             return  # Skip PF calculation entirely
 
         pf_total_numerator = 0.0

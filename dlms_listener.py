@@ -120,9 +120,7 @@ class GXSettings:
                 config.AUTHENTICATION_KEY
             )
         if isinstance(config.BLOCK_CIPHER_KEY, str) and config.BLOCK_CIPHER_KEY:
-            self.client.ciphering.blockCipherKey = GXByteBuffer.hexToBytes(
-                config.BLOCK_CIPHER_KEY
-            )
+            self.client.ciphering.blockCipherKey = GXByteBuffer.hexToBytes(config.BLOCK_CIPHER_KEY)
         self.media = GXSerial(
             "/dev/%s" % config.TTY_INTERFACE,
             baudRate=config.SERIAL_BAUD_RATE,
@@ -213,13 +211,9 @@ class DLMSListener(IGXMediaListener):
         self.translator = GXDLMSTranslator(type_=TranslatorOutputType.SIMPLE_XML)
         self.translator.comments = False
         if self.settings.client.ciphering.authenticationKey:
-            self.translator.authenticationKey = (
-                self.settings.client.ciphering.authenticationKey
-            )
+            self.translator.authenticationKey = self.settings.client.ciphering.authenticationKey
         if self.settings.client.ciphering.blockCipherKey:
-            self.translator.blockCipherKey = (
-                self.settings.client.ciphering.blockCipherKey
-            )
+            self.translator.blockCipherKey = self.settings.client.ciphering.blockCipherKey
         self.telegram_processor = TelegramProcessor.use_telegram(
             config.TELEGRAM_ID or "si-sodo-reduxi"
         )
@@ -297,9 +291,8 @@ class DLMSListener(IGXMediaListener):
                 # Only process if complete and no more data expected
                 if self.notify.complete and not self.notify.isMoreData():
                     # Skip verbose logging in production
-                    if (
-                        self.trace_level >= TraceLevel.INFO
-                        and logging.getLogger().isEnabledFor(logging.DEBUG)
+                    if self.trace_level >= TraceLevel.INFO and logging.getLogger().isEnabledFor(
+                        logging.DEBUG
                     ):
                         xml = self.translator.dataToXml(self.notify.data)
                         logging.debug(xml)
