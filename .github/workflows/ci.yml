@@ -58,10 +58,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          shopt -s globstar nullglob
-          files=(bin/**/*.sh bin/*.sh bin/service/run bin/service/log/run)
+          mapfile -t files < <(find bin -type f -name "*.sh" | sort)
+          # Conditionally include templates or run scripts if present
+          [ -f bin/service/run.tmpl ] && files+=(bin/service/run.tmpl)
+          [ -f bin/service/log/run ] && files+=(bin/service/log/run)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No shell scripts found." && exit 0
           fi
+          printf 'Checking %d shell scripts...\n' "${#files[@]}"
           shellcheck -x "${files[@]}"
-
